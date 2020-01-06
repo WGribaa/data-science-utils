@@ -70,7 +70,7 @@ class Helper:
     corr_categories_names = ('very weak', 'weak', 'moderate',
                              'strong', 'very strong')
 
-    def __init__(self, dataframe, max_categorisable=12, corr_annot=True, corr_cmap="RdYlGn", show_corr_matrix=True):
+    def __init__(self, dataframe, max_categorisable=12, show_corr_matrix=True, corr_annot=True, corr_cmap="RdYlGn"):
         """
         :param dataframe: The Dataframe to analyse
         :param max_categorisable: Maximum number of uniques for a column to be considered as categorisable.
