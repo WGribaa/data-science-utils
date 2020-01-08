@@ -119,18 +119,18 @@ class Helper:
         4- If the user set apply_advices as True, the DataFrame will be updated following the advices.
         :return:
         """
-        print("\n##### GENERAL DATAFRAME INFOS #####")
-        print(self.analyze_columns())
-        print("\n##### CORRELATION INFOS #####")
-        print(self.analyze_correlations())
-        print("\n##### GENERAL ADVICES #####")
+        analysis_text = "\n##### GENERAL DATAFRAME INFOS #####\n" + self.analyze_columns() + \
+                        "\n\n##### CORRELATION INFOS #####\n" + self.analyze_correlations() + \
+                        "\n\n##### GENERAL ADVICES #####\n"
         advices = self.get_advices()
-        print(advices if advices != "\n" else "No advice available.")
+        analysis_text += "\n" + (advices if advices != "\n" else "No advice available.")
         if self.is_apply_advices:
-            print("\nApplying advices now...\n")
+            analysis_text += "\nApplying advices now...\n"
             self.apply_advices()
             self.analyze()
             return
+        analysis_text += "\n\n##### NULL CAUSES ESTIMATIONS #####\n"+self.analyze_null_causes()
+        print(analysis_text)
 
         if self.show_corr_matrix and self.corr is not None:
             hm = sns.heatmap(self.corr, cmap=self.corr_cmap, annot=self.annot_corr,
@@ -158,18 +158,19 @@ class Helper:
         self.dataframe_col_infos = {}
         maxlength = 0
         for i in range(0, len(cols)):
+            col = self.dataframe[cols[i]]
             name = cols[i]
-            nulls = self.dataframe[cols[i]].isna().sum()
-            uniques = len(self.dataframe[cols[i]].unique())
-            coltype = str(self.dataframe[cols[i]].dtype)
+            nulls = col.isna().sum()
+            uniques = len(col.unique())
+            coltype = str(col.dtype)
             if maxlength < len(name):
                 maxlength = len(name)
             categories = None
             if coltype == "category" or uniques <= self.max_categorisable:
-                categories = list(self.dataframe[cols[i]].unique())
+                categories = list(col.unique())
             self.dataframe_col_infos[i] = ColumnInfos(i, name, nulls, n_rows - nulls,
-                                                      str(self.dataframe[cols[i]].dtype), uniques, categories,
-                                                      self.dataframe[cols[i]].bfill(axis=0)[[0]])
+                                                      str(col.dtype), uniques, categories,
+                                                      col.bfill(axis=0)[[0]])
         col_infos = format_col_infos(self.dataframe_col_infos, self.color_dict, maxlength)
 
         return dataframe_main_infos + "\n" + "\n".join(col_infos)
@@ -177,7 +178,7 @@ class Helper:
     def analyze_correlations(self):
         """
         Get the correlation of each pair of caracteristic and prints the correlation of strength of the correlated ones.
-        :return:
+        :return: A string describing the correlation between numbers in the DataFrame.
         """
         self.corr = self.dataframe.corr()
         corr_infos = ""
@@ -194,6 +195,32 @@ class Helper:
                         corr_value)
 
         return corr_infos
+
+    def analyze_null_causes(self):
+        """
+        For each column which has NANs or NAs, it will identify if another column is the cause.
+        Example : NANS from "Mean per month" column might be because of the column "Period" (with a division by zero)
+        :return: A string describing the cause of nulls, if found.
+        """
+        causes = ""
+        for index_col in range(len(self.dataframe.columns)):
+            if self.dataframe[self.dataframe.columns[index_col]].isna().sum() == 0:
+                continue
+            null_rows = self.dataframe[self.dataframe[self.dataframe.columns[index_col]].isna()]
+            _is_not_empty = False
+            for other_col in range(len(self.dataframe.columns)):
+                if other_col == index_col:
+                    continue
+                values_other_col = null_rows[self.dataframe.columns[other_col]].dropna().unique()
+                if len(values_other_col) == 1:
+                    _is_not_empty = True
+                    causes += ("\nThe null values from column \"%s\" (index %d) seem to be caused by the values "
+                               "{%s} from the column \"%s\" (index %d)." % (str(self.dataframe.columns[index_col]),
+                                                                            index_col, values_other_col[0],
+                                                                            str(self.dataframe.columns[other_col]),
+                                                                            other_col))
+
+        return causes
 
     def get_advices(self):
         """
@@ -218,7 +245,7 @@ class Helper:
 
 def format_col_infos(infos, color_dict, maxlength):
     """
-    Format the infos passed as parameter so that they are displayed in a nice faschion in the console.
+    Format the infos passed as parameter so that they are displayed in a nice fashion in the console.
     :param infos: List or tuple of ColumnInfos instances. One per row.
     :param color_dict: Dictionary to set a color for each type of data.
     :param maxlength: Length of the longest name string. Need so each column of info is aligned.
