@@ -7,21 +7,24 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
 
 
 class ColumnInfos:
     """
     Each column of the pandas DataFrame is a object that holds its own infos and advices.
     """
-    def __init__(self, index, name, n_rows, nulls, dtype, uniques, categories):
+
+    def __init__(self, index, name, n_rows, nulls, dtype, uniques, categories, sample):
         """
-        :param index: Number of the 0-indexed index in the DataFrame. Currently independent from the tru Index.
-        :param name: name of the column.
+        :param index: Number of the 0-indexed index in the DataFrame. Currently independent from the true Index.
+        :param name: Name of the column.
         :param n_rows: Number of non-null values.
         :param nulls: Number of null values.
         :param dtype: dtype of the column.
         :param uniques: Number of uniques.
         :param categories: List of categories if less than the Helper parameter "max_categorisable".
+        :param sample: first non NA value of the column, to test for other advices.
         """
         self.index = index
         self.name = name
@@ -30,27 +33,31 @@ class ColumnInfos:
         self.dtype = dtype
         self.uniques = uniques
         self.categories = categories
+        self.is_date_compatible = date_compatible(sample)
 
     def has_advice(self):
         """
         Tells if the ColumnInfo presently holds an advice.
         :return: Boolean. True : yes, False = no.
         """
-        return self.categories is not None
+        return self.categories is not None or self.is_date_compatible
 
     def get_advice(self):
         """
         If it holds any advice, formats it then return it as a String.
         :return: Advice(s) as String to be printed as is.
         """
-        if self.categories is None:
+        if not self.has_advice():
             return
         ret = "The column \"%s\" (index %d)" % (self.name, self.index)
-        if self.uniques > 1:
-            return ret+" should be casted into a %s." % \
-                   ("category" if self.uniques > 2 else "boolean")
-        else:
-            return ret+"should be deleted."
+        if self.is_date_compatible:
+            return ret + " seems compatible with datetime. Check and try to cast it using \"pandas.to_date_time()\""
+        if self.categories is not None:
+            if self.uniques > 1:
+                return ret + " should be casted into a %s." % \
+                       ("category" if self.uniques > 2 else "boolean")
+            else:
+                return ret + "should be deleted."
 
     def __str__(self):
         return format_col_infos([self.name], {}, len(self.name))
@@ -60,7 +67,7 @@ class Helper:
     """
     A class that provides method toe quickly sea points of interest of a pandas Dataframe.
     """
-    # Shows a different color for each type of a columns.
+    # Shows a different color for each type of columns.
     color_dict = {"int64": "1;31;47", "float64": "1;33;47", "object": "1;32;47", "bool": "1;34;47",
                   "category": "1;36;47", "datetime64[ns]": "1;37;47", "timedelta64[ns]": "1;35;47"}
 
@@ -105,8 +112,11 @@ class Helper:
         print("\n##### GENERAL ADVICES #####")
         print(self.get_advices())
         if show_corr_matrix and self.show_corr_matrix and self.corr is not None:
-            sns.heatmap(self.corr, cmap=self.corr_cmap, annot=self.annot_corr, xticklabels=self.corr.columns.values,
-                        yticklabels=self.corr.columns.values, vmin=-1, vmax=1)
+            hm = sns.heatmap(self.corr, cmap=self.corr_cmap, annot=self.annot_corr,
+                             xticklabels=self.corr.columns.values,
+                             yticklabels=self.corr.columns.values, vmin=-1, vmax=1)
+            bottom, top = hm.get_ylim()
+            hm.set_ylim(bottom + 0.5, top - 0.5)
             plt.show()
 
     def analyze_columns(self):
@@ -137,7 +147,8 @@ class Helper:
             if coltype == "category" or uniques <= self.max_categorisable:
                 categories = list(self.dataframe[cols[i]].unique())
             self.dataframe_col_infos[i] = ColumnInfos(i, name, nulls, n_rows - nulls,
-                                                      str(self.dataframe[cols[i]].dtype), uniques, categories)
+                                                      str(self.dataframe[cols[i]].dtype), uniques, categories,
+                                                      self.dataframe[cols[i]].bfill(axis=0)[[0]])
         col_infos = format_col_infos(self.dataframe_col_infos, self.color_dict, maxlength)
 
         return dataframe_main_infos + "\n" + "\n".join(col_infos)
@@ -168,7 +179,7 @@ class Helper:
         for i in range(len(self.dataframe_col_infos)):
             if self.dataframe_col_infos[i].has_advice():
                 advices.append(self.dataframe_col_infos[i].get_advice())
-        return "\n"+"\n".join(advices)
+        return "\n" + "\n".join(advices)
 
 
 def format_col_infos(infos, color_dict, maxlength):
@@ -205,3 +216,28 @@ def get_interval(value, intervals):
         if abs(value) < intervals[i]:
             return i
     return len(intervals) - 1
+
+
+def date_compatible(sample):
+    """
+    Checks if a value is time_compatible.
+    To do so, it passes two tests :
+    1- It looks for three non-overlapping components thanks to a regex pattern :
+        1- Year (4 digits)
+        2- Month (three letter or numbers 00 to 19)
+        3- Day (numbers 00 to 39)
+    2- It tests the cast into Datetime type.
+    If both tests passed, it will inform the calling ColumnInfos that it might be a date.
+    WARNING : Needs further testing and improvements !!!
+    For example : it doesn't detect this kind of pattern yet : "ddmmyyy" (with no separator in-between)
+    :param sample: Value to test.
+    :return: True if sample looks like a relevant datetime.
+    """
+    if len(re.findall(r"(?i)(([12][\d]{3})(?=($|[^\d])))|(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)(?=($|[^\d]))"
+                      r"|(([01][\d])(?=($|[^\d])))|((^|[^\d])([0-3][\d])(?=($|[^\d])))", str(sample))) < 3:
+        return False
+    try:
+        pd.to_datetime(sample)
+    except ValueError:
+        return False
+    return True
