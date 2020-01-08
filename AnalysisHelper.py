@@ -52,13 +52,21 @@ class ColumnInfos:
             return
         ret = "The column \"%s\" (index %d)" % (self.name, self.index)
         if self.is_date_compatible:
-            return ret + " seems compatible with datetime. Check and try to cast it using \"pandas.to_date_time()\""
+            return ret + " seems compatible with datetime. Check and try to cast it using \"pandas.to_date_time()\"."
         if self.categories is not None:
             if self.uniques > 1:
                 return ret + " should be casted into a %s." % \
                        ("category" if self.uniques > 2 else "boolean")
             else:
                 return ret + "should be deleted."
+
+    def get_advice_func(self):
+        if self.is_date_compatible:
+            return lambda col: pd.to_datetime(col)
+        elif self.categories is not None:
+            return lambda col: col.astype("category")
+        else:
+            return lambda col: col
 
     def __str__(self):
         return format_col_infos([self.name], {}, len(self.name))
@@ -78,7 +86,8 @@ class Helper:
     corr_categories_names = ('very weak', 'weak', 'moderate',
                              'strong', 'very strong')
 
-    def __init__(self, dataframe, max_categorisable=12, show_corr_matrix=True, corr_annot=True, corr_cmap="RdYlGn"):
+    def __init__(self, dataframe, max_categorisable=12, show_corr_matrix=True, corr_annot=True, corr_cmap="RdYlGn",
+                 apply_advice=False):
         """
         :param dataframe: The Dataframe to analyse
         :param max_categorisable: Maximum number of uniques for a column to be considered as categorisable.
@@ -97,13 +106,17 @@ class Helper:
         self.corr = None
         # Dictionary of ColumnInfos, working along with the current class.
         self.dataframe_col_infos = {}
+        # True if the user wants the advices to be applied automatically
+        self.is_apply_advices = apply_advice
+        self.analyze()
 
-    def firstAnalysis(self, show_corr_matrix=True):
+    def analyze(self):
         """
         Launches basic hints for analyses :
         1- Extended info-like table.
         2- Correlation matrix and correlated pairs of characteristics.
         3- Relevant advices about columns.
+        4- If the user set apply_advices as True, the DataFrame will be updated following the advices.
         :return:
         """
         print("\n##### GENERAL DATAFRAME INFOS #####")
@@ -111,8 +124,15 @@ class Helper:
         print("\n##### CORRELATION INFOS #####")
         print(self.analyze_correlations())
         print("\n##### GENERAL ADVICES #####")
-        print(self.get_advices())
-        if show_corr_matrix and self.show_corr_matrix and self.corr is not None:
+        advices = self.get_advices()
+        print(advices if advices != "\n" else "No advice available.")
+        if self.is_apply_advices:
+            print("\nApplying advices now...\n")
+            self.apply_advices()
+            self.analyze()
+            return
+
+        if self.show_corr_matrix and self.corr is not None:
             hm = sns.heatmap(self.corr, cmap=self.corr_cmap, annot=self.annot_corr,
                              xticklabels=self.corr.columns.values,
                              yticklabels=self.corr.columns.values, vmin=-1, vmax=1)
@@ -176,11 +196,24 @@ class Helper:
         return corr_infos
 
     def get_advices(self):
+        """
+        Retrieves and concatenate advices from all ColumnInfos as a String.
+        :return: String of all ColumnInfos advices.
+        """
         advices = []
         for i in range(len(self.dataframe_col_infos)):
             if self.dataframe_col_infos[i].has_advice():
                 advices.append(self.dataframe_col_infos[i].get_advice())
         return "\n" + "\n".join(advices)
+
+    def apply_advices(self):
+        """
+        Apply the function given by the advices to each column of the dataframe.
+        """
+        for i in range(len(self.dataframe.columns)):
+            self.dataframe[self.dataframe.columns[i]] = self.dataframe_col_infos[i].get_advice_func()(
+                self.dataframe[self.dataframe.columns[i]])
+        self.is_apply_advices = False
 
 
 def format_col_infos(infos, color_dict, maxlength):
