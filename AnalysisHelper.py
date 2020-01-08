@@ -40,7 +40,8 @@ class ColumnInfos:
         Tells if the ColumnInfo presently holds an advice.
         :return: Boolean. True : yes, False = no.
         """
-        return self.categories is not None or self.is_date_compatible
+        return (self.dtype != "category" and self.categories is not None) or \
+               (self.dtype != "datetime64[ns]" and self.is_date_compatible)
 
     def get_advice(self):
         """
