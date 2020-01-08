@@ -65,7 +65,7 @@ class ColumnInfos:
 
 class Helper:
     """
-    A class that provides method toe quickly sea points of interest of a pandas Dataframe.
+    A class that provides methods to quickly see points of interest of a pandas Dataframe.
     """
     # Shows a different color for each type of columns.
     color_dict = {"int64": "1;31;47", "float64": "1;33;47", "object": "1;32;47", "bool": "1;34;47",

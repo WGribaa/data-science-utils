@@ -14,7 +14,7 @@ Correlation infos :
 * Pairs of columns that are, at least, weakly correlated.
 
 General advices :
-* Advices about columns. For the moment, it shows you whcih columns should be deleted as adding no information, and which columns should be casted to categorical.
+* Advices about columns. For the moment, it shows you which columns should be deleted as adding no information, and which columns should be casted to categorical.
 
 HOW TO USE:
 1- Import the AnalysisHelper.py and add it like a module
