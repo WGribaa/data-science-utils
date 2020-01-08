@@ -4,18 +4,21 @@ Tools for effective Data analysis and models
 AnalysisHelper is a quick tool that will help you have a quick grasp of your DataFrame.
 As you would do with pd.DataFrame.info(), now you can import this module and simply create a Helper object that will give you first aid informations listed below. It can now apply its own advices if you want it to !
 
-General Dataframe infos : 
+¤ General Dataframe infos : 
 * Number of columns and rows
 * Range and step of indices.
 * Extended columns infos : name, number of non-nulls, number of nulls and number of unique values. if less that a specified value, it will also show the list of uniques (check the attribute "max_categorisable below).
 
-Correlation infos :
+¤ Correlation infos :
 * If wanted, a correlation matrix as a seaborn heatmap (needs seaborn module).
 * Pairs of columns that are, at least, weakly correlated.
 
-General advices (1):
+¤ General advices (1):
 * Advices about columns. Shows you which columns should be deleted as adding no information, and which columns should be casted to categorical.
 * Tests quite accurately if a column represents a date, and advices you to convert it into a DateTime if so.
+
+¤ Null causes estimations :
+* When all null values of a column are caused by a certain value from another column, the Helper will notify it in its report. A typical example is division by zero.
 
 (1) Those advices can now be applied by the Helper itself. Check the methods and constructor arguments below.
 
