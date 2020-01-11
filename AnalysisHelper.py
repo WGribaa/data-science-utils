@@ -129,7 +129,7 @@ class Helper:
             self.apply_advices()
             self.analyze()
             return
-        analysis_text += "\n\n##### NULL CAUSES ESTIMATIONS #####\n"+self.analyze_null_causes()
+        analysis_text += "\n\n##### NULL CAUSES ESTIMATIONS #####\n" + self.analyze_null_causes()
         print(analysis_text)
 
         if self.show_corr_matrix and self.corr is not None:
@@ -153,8 +153,10 @@ class Helper:
         n_rows = len(self.dataframe)
         indices = self.dataframe.index
         dataframe_main_infos = '\nThe dataframe has %s columns and %d rows.' % (n_cols, n_rows) + \
-                               "\nIndices : from %d to %d (step= %d)" \
-                               % (indices.start, indices.stop - indices.step, indices.step)
+                               ("\nIndices : from %d to %d (step= %d)"
+                                % (indices.start, indices.stop - indices.step, indices.step)
+                                if isinstance(indices, pd.core.indexes.range.RangeIndex)
+                                else "\nIndices are not a RangeIndex. %s instead." % type(indices))
         self.dataframe_col_infos = {}
         maxlength = 0
         for i in range(0, len(cols)):
