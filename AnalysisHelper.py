@@ -86,7 +86,7 @@ class Helper:
     corr_categories_names = ('very weak', 'weak', 'moderate',
                              'strong', 'very strong')
 
-    def __init__(self, dataframe, max_categorisable=12, show_corr_matrix=True, corr_annot=True, corr_cmap="RdYlGn",
+    def __init__(self, dataframe, max_categorisable=12, show_corr_matrix=True, corr_annot=True, corr_cmap="coolwarm",
                  apply_advice=False):
         """
         :param dataframe: The Dataframe to analyse
