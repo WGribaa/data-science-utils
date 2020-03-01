@@ -1,8 +1,8 @@
 # data-science-utils
-Tools for effective Data analysis and models
+Tools for effective Data analysis and knowledge of a DataSet.
 
-AnalysisHelper is a quick tool that will help you have a quick grasp of your DataFrame.
-As you would do with pd.DataFrame.info(), now you can import this module and simply create a Helper object that will give you first aid informations listed below. It can now apply its own advices if you want it to !
+AnalysisHelper is a  tool that will help you quickly have a  grasp of your DataFrame.
+Instead of calling several well known, but simplistic functions, like pd.DataFrame.info(), you can this module and simply create a Helper object that will give you first aid informations. It can also apply the advices it gives if you ask it !
 
 ¤ General Dataframe infos : 
 * Number of columns and rows
