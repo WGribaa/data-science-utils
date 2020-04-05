@@ -260,7 +260,6 @@ def format_col_infos(infos, color_dict, maxlength):
     :return: A list of formatted strings to be joined with a line-return then to be displayed as is.
     """
     ret = []
-    print(infos)
     for i in range(len(infos)):
         colinfo = infos[i]
         col_text = str(i) + ":\t\"" + colinfo.name + "\"" + "." * (maxlength + 2 - len(colinfo.name)) + "of type %s " \
