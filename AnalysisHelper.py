@@ -111,7 +111,7 @@ class Helper:
         # The correlation matrix drawn with seaborn.
         self.corr = None
         # Dictionary of ColumnInfos, working along with the current class.
-        self.dataframe_col_infos = {}
+        self.dataframe_col_infos = []
         # True if the user wants the advices to be applied automatically
         self.is_apply_advices = apply_advice
         self.analyze()
@@ -174,7 +174,7 @@ class Helper:
             if maxlength < len(name):
                 maxlength = len(name)
             categories = None
-            if coltype == "category" or uniques <= self.max_categorisable:
+            if coltype in ["category", "bool"] or uniques <= self.max_categorisable:
                 categories = list(col.unique())
             self.dataframe_col_infos[i] = ColumnInfos(i, name, nulls, n_rows - nulls,
                                                       str(col.dtype), uniques, categories,
@@ -260,20 +260,16 @@ def format_col_infos(infos, color_dict, maxlength):
     :return: A list of formatted strings to be joined with a line-return then to be displayed as is.
     """
     ret = []
+    print(infos)
     for i in range(len(infos)):
         colinfo = infos[i]
-        # ret.append(str(i) + ":\t\"" + colinfo.name + "\"" + "." * (
-        #         maxlength + 2 - len(colinfo.name)) + "of type %s \t%s null values and %d uniques%s." % (
-        #                "\x1b[" + color_dict[str(colinfo.dtype)] + "m" + str(colinfo.dtype) + "\x1b[0m",
-        #                str(colinfo.n_rows), colinfo.uniques,
-        #                "" if not colinfo.categories else " [" + ", ".join(map(str, colinfo.categories)) + "]"))
         col_text = str(i) + ":\t\"" + colinfo.name + "\"" + "." * (maxlength + 2 - len(colinfo.name)) + "of type %s " \
                                                                                                         "\t%d null " \
                                                                                                         "values" % (
             "\x1b[" + color_dict[str(colinfo.dtype)] + "m" + str(colinfo.dtype) + "\x1b[0m", colinfo.n_rows)
         if not colinfo.categories:
             col_text += " and %d uniques" % colinfo.uniques
-        elif len(colinfo.categories) > 2:
+        elif colinfo.dtype != "bool":
             col_text += " and %d uniques [" % colinfo.uniques + ", ".join(map(str, colinfo.categories)) + "]"
 
         ret.append(col_text + ".")
