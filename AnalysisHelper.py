@@ -40,8 +40,14 @@ class ColumnInfos:
         Tells if the ColumnInfo presently holds an advice.
         :return: Boolean. True : yes, False = no.
         """
-        return (self.dtype != "category" and self.categories is not None) or \
-               (self.dtype != "datetime64[ns]" and self.is_date_compatible)
+        if self.dtype != "datetime64[ns]" and self.is_date_compatible:
+            return True
+        if self.categories is None:
+            return False
+        if self.dtype != "category" and len(self.categories) > 2:
+            return True
+        if self.dtype != "bool" and len(self.categories) <= 2:
+            return True
 
     def get_advice(self):
         """
@@ -64,7 +70,7 @@ class ColumnInfos:
         if self.is_date_compatible:
             return lambda col: pd.to_datetime(col)
         elif self.categories is not None:
-            return lambda col: col.astype("category")
+            return lambda col: col.astype("category") if self.uniques > 2 else col.astype("bool")
         else:
             return lambda col: col
 
@@ -77,7 +83,7 @@ class Helper:
     A class that provides methods to quickly see points of interest of a pandas Dataframe.
     """
     # Shows a different color for each type of columns.
-    color_dict = {"int64": "1;31;47", "float64": "1;33;47", "object": "1;32;47", "bool": "1;34;47",
+    color_dict = {"uint8": "2;31;47", "int64": "1;31;47", "float64": "1;33;47", "object": "1;32;47", "bool": "1;34;47",
                   "category": "1;36;47", "datetime64[ns]": "1;37;47", "timedelta64[ns]": "1;35;47"}
 
     # Levels of correlations given a pearson correlation value (0 to 1).
@@ -256,11 +262,21 @@ def format_col_infos(infos, color_dict, maxlength):
     ret = []
     for i in range(len(infos)):
         colinfo = infos[i]
-        ret.append(str(i) + ":\t\"" + colinfo.name + "\"" + "." * (
-                maxlength + 2 - len(colinfo.name)) + "of type %s \t%s null values and %d uniques%s." % (
-                       "\x1b[" + color_dict[str(colinfo.dtype)] + "m" + str(colinfo.dtype) + "\x1b[0m",
-                       str(colinfo.n_rows), colinfo.uniques,
-                       "" if not colinfo.categories else " [" + ", ".join(map(str, colinfo.categories)) + "]"))
+        # ret.append(str(i) + ":\t\"" + colinfo.name + "\"" + "." * (
+        #         maxlength + 2 - len(colinfo.name)) + "of type %s \t%s null values and %d uniques%s." % (
+        #                "\x1b[" + color_dict[str(colinfo.dtype)] + "m" + str(colinfo.dtype) + "\x1b[0m",
+        #                str(colinfo.n_rows), colinfo.uniques,
+        #                "" if not colinfo.categories else " [" + ", ".join(map(str, colinfo.categories)) + "]"))
+        col_text = str(i) + ":\t\"" + colinfo.name + "\"" + "." * (maxlength + 2 - len(colinfo.name)) + "of type %s " \
+                                                                                                        "\t%d null " \
+                                                                                                        "values" % (
+            "\x1b[" + color_dict[str(colinfo.dtype)] + "m" + str(colinfo.dtype) + "\x1b[0m", colinfo.n_rows)
+        if not colinfo.categories:
+            col_text += " and %d uniques" % colinfo.uniques
+        elif len(colinfo.categories) > 2:
+            col_text += " and %d uniques [" % colinfo.uniques + ", ".join(map(str, colinfo.categories)) + "]"
+
+        ret.append(col_text + ".")
     return ret
 
 
