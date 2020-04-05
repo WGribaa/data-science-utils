@@ -70,7 +70,7 @@ class ColumnInfos:
         if self.is_date_compatible:
             return lambda col: pd.to_datetime(col)
         elif self.categories is not None:
-            return lambda col: col.astype("category") if self.uniques > 2 else col.astype("bool")
+            return lambda col: col.astype("category") if self.uniques > 2 else col == self.categories[0]
         else:
             return lambda col: col
 
