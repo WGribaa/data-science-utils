@@ -298,7 +298,7 @@ def date_compatible(sample):
     To do so, it passes two tests :
     1- It looks for three non-overlapping components thanks to a regex pattern :
         1- Year (4 digits)
-        2- Month (three letter or numbers 00 to 19)
+        2- Month (three letters or numbers 00 to 19)
         3- Day (numbers 00 to 39)
     2- It tests the cast into Datetime type.
     If both tests passed, it will inform the calling ColumnInfos that it might be a date.
@@ -312,6 +312,6 @@ def date_compatible(sample):
         return False
     try:
         pd.to_datetime(sample)
-    except ValueError:
+    except (ValueError, TypeError):
         return False
     return True
