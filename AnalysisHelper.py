@@ -83,8 +83,10 @@ class Helper:
     A class that provides methods to quickly see points of interest of a pandas Dataframe.
     """
     # Shows a different color for each type of columns.
-    color_dict = {"uint8": "2;31;47", "int64": "1;31;47", "float64": "1;33;47", "object": "1;32;47", "bool": "1;34;47",
-                  "category": "1;36;47", "datetime64[ns]": "1;37;47", "timedelta64[ns]": "1;35;47"}
+    color_dict = {"int8": "2;31;47", "int16": "3;31;47", "int32": "0;31;47", "int64": "1;31;47",
+                  "uint8": "2;31;47", "uint16": "3;31;47", "uint32": "0;31;47", "uint64": "1;31;47",
+                  "float16": "3;33;47", "float32": "0;33;47", "float64": "1;33;47", "object": "1;32;47",
+                  "bool": "1;34;47", "category": "1;36;47", "datetime64[ns]": "1;37;47", "timedelta64[ns]": "1;35;47"}
 
     # Levels of correlations given a pearson correlation value (0 to 1).
     # Reference : http://www.statstutor.ac.uk/resources/uploaded/pearsons.pdf page 4
@@ -303,7 +305,7 @@ def date_compatible(sample):
     2- It tests the cast into Datetime type.
     If both tests passed, it will inform the calling ColumnInfos that it might be a date.
     WARNING : Needs further testing and improvements !!!
-    For example : it doesn't detect this kind of pattern yet : "ddmmyyy" (with no separator in-between)
+    For example : it doesn't detect this kind of pattern yet : "ddmmyyyy" (with no separator in-between)
     :param sample: Value to test.
     :return: True if sample looks like a relevant datetime.
     """
