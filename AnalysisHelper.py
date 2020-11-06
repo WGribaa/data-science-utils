@@ -94,7 +94,7 @@ class Helper:
     corr_categories_names = ('very weak', 'weak', 'moderate',
                              'strong', 'very strong')
 
-    def __init__(self, dataframe, max_categorisable=12, show_corr_matrix=True, corr_annot=True, corr_cmap="coolwarm",
+    def __init__(self, dataframe, max_categorisable=12, show_corr_matrix=True, corr_annot=True, corr_cmap=None,
                  apply_advice=False):
         """
         :param dataframe: The Dataframe to analyse
@@ -107,7 +107,7 @@ class Helper:
         assert isinstance(dataframe, pd.DataFrame)
         self.dataframe = dataframe
         self.annot_corr = corr_annot
-        self.corr_cmap = corr_cmap
+        self.corr_cmap = corr_cmap if corr_cmap is not None else sns.diverging_palette(12.2, 127, sep=75, as_cmap=True)
         self.max_categorisable = max_categorisable
         self.show_corr_matrix = show_corr_matrix
         # The correlation matrix drawn with seaborn.
@@ -141,7 +141,7 @@ class Helper:
         print(analysis_text)
 
         if self.show_corr_matrix and self.corr is not None:
-            hm = sns.heatmap(self.corr, cmap=self.corr_cmap, annot=self.annot_corr,
+            hm = sns.heatmap(self.corr, cmap=self.corr_cmap, annot=self.annot_corr, center=0,
                              xticklabels=self.corr.columns.values,
                              yticklabels=self.corr.columns.values, vmin=-1, vmax=1)
             bottom, top = hm.get_ylim()
